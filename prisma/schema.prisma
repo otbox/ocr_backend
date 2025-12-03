@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  documents Document[]
+  
+  @@map("users")
+}
+
+model Document {
+  id              String         @id @default(uuid())
+  userId          String
+  originalName    String
+  storageUrl      String
+  mimeType        String
+  fileSize        Int
+  status          DocumentStatus @default(PROCESSING)
+  extractedText   String?        @db.Text
+  processingError String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+  
+  @@map("documents")
+  @@index([userId])
+  @@index([status])
+}
+
+enum DocumentStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Conversation {
+  id         String   @id @default(uuid())
+  documentId String
+  messages   Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  
+  @@map("conversations")
+  @@index([documentId])
+}
