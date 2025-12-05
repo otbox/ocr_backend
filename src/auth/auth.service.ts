@@ -45,6 +45,7 @@ export class AuthService {
 
     const accessToken = this.generateToken(user.id, user.email);
 
+    
     const { password, ...userWithoutPassword } = user;
 
     return {

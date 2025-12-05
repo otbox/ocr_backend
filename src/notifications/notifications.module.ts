@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NotificationsGateway } from './notifications.gateway';
 import { NotificationsService } from './notifications.service';
+import { LlmService } from 'src/llm/llm.service';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { NotificationsService } from './notifications.service';
       inject: [ConfigService],
     }),
   ],
-  providers: [NotificationsGateway, NotificationsService],
+  providers: [NotificationsGateway, NotificationsService, LlmService],
   exports: [NotificationsGateway],
 })
 export class NotificationsModule {}

@@ -18,6 +18,9 @@ import {
     OcrCompletedPayload,
     OcrFailedPayload,
 } from './dto/socket-events.dto';
+import { DocumentStatus } from '@prisma/client';
+import { LlmService } from '../llm/llm.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 @WebSocketGateway({
     cors: {
@@ -32,8 +35,13 @@ export class NotificationsGateway implements OnGatewayInit, OnGatewayConnection,
 
     private readonly logger = new Logger(NotificationsGateway.name);
     private readonly userSockets = new Map<string, Set<string>>(); // userId -> Set<socketId>
+    // prisma: any;
+    // llmService: any;
 
-    constructor(private jwtService: JwtService) { }
+    constructor(private jwtService: JwtService,
+            private llmService: LlmService,
+            private prisma: PrismaService,
+    ) { }
 
     afterInit(server: Server) {
         this.logger.log('🔌 WebSocket Gateway inicializado');
@@ -124,6 +132,107 @@ export class NotificationsGateway implements OnGatewayInit, OnGatewayConnection,
     }
 
 
+        @SubscribeMessage('llm:ask')
+    async handleLlmAsk(
+        @MessageBody() data: { documentId: string; question: string },
+        @ConnectedSocket() client: Socket,
+    ) {
+        const userId = client.data.userId; // usuário já autenticado no handleConnection
+        
+        this.logger.log("aqui:",data.documentId, data.question)
+        try {
+            this.logger.log(`💬 Pergunta recebida de user:${userId} para doc:${data.documentId}`);
+
+            // 1) Buscar documento com conversas
+            const document = await this.prisma.document.findUnique({
+                where: { id: data.documentId },
+                include: {
+                    conversations: {
+                        orderBy: { createdAt: 'desc' },
+                        take: 1,
+                    },
+                },
+            });
+
+
+            // Validações (mesma lógica do controller)
+            if (!document) {
+                throw new Error('Documento não encontrado');
+            }
+
+            if (document.userId !== userId) {
+                throw new Error('Você não tem permissão para acessar este documento');
+            }
+
+            if (document.status !== DocumentStatus.COMPLETED) {
+                throw new Error('Documento ainda está sendo processado');
+            }
+
+            if (!document.extractedText) {
+                throw new Error('Nenhum texto extraído do documento');
+            }
+
+            // 2) Pegar histórico de conversa
+            const existingConversation = document.conversations[0];
+            const conversationHistory = existingConversation
+                ? (existingConversation.messages as any[])
+                : [];
+
+            // 3) Gerar resposta com a LLM
+            const answer = await this.llmService.generateResponse(
+                document.extractedText,
+                conversationHistory,
+                data.question,
+            );
+
+            // 4) Salvar no banco
+            const newMessages = [
+                ...conversationHistory,
+                { role: 'user', content: data.question },
+                { role: 'assistant', content: answer },
+            ];
+
+            if (existingConversation) {
+                await this.prisma.conversation.update({
+                    where: { id: existingConversation.id },
+                    data: { messages: newMessages },
+                });
+            } else {
+                await this.prisma.conversation.create({
+                    data: {
+                        documentId: document.id,
+                        messages: newMessages,
+                    },
+                });
+            }
+
+            // 5) Emitir resposta de volta para o cliente
+            client.emit('llm:answer', {
+                documentId: data.documentId,
+                question: data.question,
+                answer,
+                timestamp: new Date().toISOString(),
+            });
+
+            this.logger.log(`✅ Resposta enviada para user:${userId} - doc:${data.documentId}`);
+
+        } catch (error) {
+            this.logger.error(
+                `❌ Erro ao processar pergunta para doc:${data.documentId}:`,
+                error.message,
+            );
+
+            // Emitir erro de volta
+            client.emit('llm:error', {
+                documentId: data.documentId,
+                question: data.question,
+                error: error.message || 'Erro ao processar pergunta',
+                timestamp: new Date().toISOString(),
+            });
+        }
+    }
+
+    
     notifyUser(userId: string, payload: NotificationPayload) {
         this.server.to(`user:${userId}`).emit(SocketEvent.NOTIFICATION, payload);
         this.logger.log(`📤 Notificação enviada para user:${userId}`);

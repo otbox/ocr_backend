@@ -25,7 +25,6 @@ export class LlmController {
 
   @Post('ask')
   async askQuestion(@Body() dto: AskQuestionDto, @CurrentUser() user: any) {
-    // 1. Buscar documento e verificar ownership
     const document = await this.prisma.document.findUnique({
       where: { id: dto.documentId },
       include: {
@@ -52,20 +51,17 @@ export class LlmController {
       throw new BadRequestException('Nenhum texto extraído do documento');
     }
 
-    // 2. Buscar histórico de conversas
     const existingConversation = document.conversations[0];
     const conversationHistory = existingConversation
       ? (existingConversation.messages as any[])
       : [];
 
-    // 3. Gerar resposta com LLM
     const answer = await this.llmService.generateResponse(
       document.extractedText,
       conversationHistory,
       dto.question,
     );
 
-    // 4. Atualizar ou criar conversation
     const newMessages = [
       ...conversationHistory,
       { role: 'user', content: dto.question },
