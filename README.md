@@ -205,7 +205,7 @@ ORACLE_SECRET_KEY="sua-secret-key"
 
 # OpenAI
 GEMINI_API_KEY="sk-proj-sua-chave-aqui"
-GEMINI_MODEL="gpt-4o-mini"
+GEMINI_MODEL="gemini-2.0-flash"
 
 # App
 PORT=3001
