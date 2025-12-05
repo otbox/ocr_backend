@@ -8,7 +8,6 @@ export class OcrService {
   private worker: Worker;
 
   async onModuleInit() {
-    // Inicializar o worker do Tesseract
     this.logger.log('🔄 Inicializando Tesseract...');
     this.worker = await createWorker('por+eng', 1, {
       logger: (m) => {

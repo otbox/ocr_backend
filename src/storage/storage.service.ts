@@ -59,7 +59,6 @@ export class StorageService {
 
       await this.s3Client.send(command);
 
-      // URL pública da Oracle
       const url = `https://objectstorage.${this.region}.oraclecloud.com/n/${this.namespace}/b/${this.bucketName}/o/${fileName}`;
       
       this.logger.log(`✅ Arquivo salvo na Oracle Cloud: ${fileName}`);

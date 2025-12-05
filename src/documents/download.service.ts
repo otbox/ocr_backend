@@ -28,22 +28,18 @@ export class DownloadService {
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      // Título
       doc.fontSize(20).text('Relatório de Documento OCR', { align: 'center' });
       doc.moveDown();
 
-      // Informações do documento
       doc.fontSize(12).text(`Arquivo: ${documentData.originalName}`);
       doc.text(`Data de Upload: ${documentData.createdAt.toLocaleDateString('pt-BR')}`);
       doc.moveDown();
 
-      // Texto extraído
       doc.fontSize(16).text('Texto Extraído (OCR):', { underline: true });
       doc.moveDown(0.5);
       doc.fontSize(10).text(documentData.extractedText || 'Nenhum texto extraído');
       doc.moveDown(2);
 
-      // Conversas com IA
       if (documentData.conversations.length > 0) {
         doc.fontSize(16).text('Interações com IA:', { underline: true });
         doc.moveDown(0.5);
@@ -66,9 +62,8 @@ export class DownloadService {
         });
       }
 
-      // Footer
       doc.fontSize(8).fillColor('gray').text(
-        `Gerado em ${new Date().toLocaleString('pt-BR')} por Paggo OCR`,
+        `Gerado em ${new Date().toLocaleString('pt-BR')} por OCR`,
         { align: 'center' },
       );
 

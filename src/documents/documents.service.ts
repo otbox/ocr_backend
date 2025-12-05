@@ -108,11 +108,9 @@ export class DocumentsService {
   async delete(id: string, userId: string) {
     const document = await this.findOne(id, userId);
 
-    // Deletar arquivo do storage
     const fileName = document.storageUrl.split('/').pop();
     await this.storageService.deleteFile(fileName || '');
 
-    // Deletar do banco
     await this.prisma.document.delete({
       where: { id },
     });

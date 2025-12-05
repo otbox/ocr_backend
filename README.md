@@ -1,102 +1,501 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🚀  OCR - Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API RESTful desenvolvida com NestJS para processamento de documentos com OCR e interação via IA.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 📋 Índice
 
-## Description
+- [Tecnologias](#tecnologias)
+- [Arquitetura](#arquitetura)
+- [Funcionalidades](#funcionalidades)
+- [Pré-requisitos](#pré-requisitos)
+- [Instalação](#instalação)
+- [Configuração](#configuração)
+- [Executando Localmente](#executando-localmente)
+- [Endpoints da API](#endpoints-da-api)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Deploy](#deploy)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+---
 
-## Project setup
+## 🛠 Tecnologias
 
-```bash
-$ yarn install
+### Core
+- **[NestJS](https://nestjs.com/)** (v10) - Framework Node.js progressivo
+- **[TypeScript](https://www.typescriptlang.org/)** - Superset tipado do JavaScript
+- **[Prisma ORM](https://www.prisma.io/)** - ORM moderno para banco de dados
+- **[PostgreSQL](https://www.postgresql.org/)** - Banco de dados relacional
+
+### Autenticação & Segurança
+- **[Passport JWT](https://www.passportjs.org/)** - Autenticação baseada em tokens
+- **[bcrypt](https://www.npmjs.com/package/bcrypt)** - Hash de senhas
+
+### Storage & Arquivos
+- **[Oracle Cloud Object Storage](https://www.oracle.com/cloud/storage/)** - Armazenamento em nuvem (S3-compatible)
+- **[Multer](https://www.npmjs.com/package/multer)** - Middleware para upload de arquivos
+
+### OCR & IA
+- **[Tesseract.js](https://tesseract.projectnaptha.com/)** - Engine OCR (reconhecimento óptico de caracteres)
+- **[OpenAI API](https://platform.openai.com/)** - GPT-4o-mini para análise de documentos
+
+### Geração de Documentos
+- **[PDFKit](https://pdfkit.org/)** - Geração de PDFs
+
+---
+
+## 🏗 Arquitetura
+
+### Padrão de Camadas
+
+```
+┌─────────────────────────────────────────────┐
+│           Cliente (Frontend)                │
+└──────────────────┬──────────────────────────┘
+                   │ HTTP/REST
+┌──────────────────▼──────────────────────────┐
+│            Controllers                      │
+│  (Rotas e validação de entrada)            │
+└──────────────────┬──────────────────────────┘
+                   │
+┌──────────────────▼──────────────────────────┐
+│             Services                        │
+│  (Lógica de negócio)                       │
+└──────┬─────────┬──────────┬─────────────────┘
+       │         │          │
+   ┌───▼───┐ ┌──▼────┐ ┌───▼──────┐
+   │Prisma │ │Storage│ │OCR/LLM   │
+   │  ORM  │ │Service│ │Services  │
+   └───┬───┘ └──┬────┘ └───┬──────┘
+       │        │           │
+   ┌───▼────┐ ┌─▼────────┐ │
+   │PostgeSQL│ │Oracle    │ │
+   │         │ │Cloud     │ │
+   └─────────┘ └──────────┘ │
+                             │
+                    ┌────────▼────────┐
+                    │ OpenAI API      │
+                    │ Tesseract OCR   │
+                    └─────────────────┘
 ```
 
-## Compile and run the project
+### Módulos Principais
+
+1. **Auth Module** - Autenticação JWT
+2. **Users Module** - Gerenciamento de usuários
+3. **Documents Module** - Upload e gerenciamento de documentos
+4. **OCR Module** - Processamento de texto em imagens
+5. **LLM Module** - Interação com IA (perguntas e respostas)
+6. **Storage Module** - Armazenamento de arquivos (local ou Oracle Cloud)
+
+---
+
+## ✨ Funcionalidades
+
+### Autenticação
+- [x] Registro de usuários com hash bcrypt
+- [x] Login com JWT (token expira em 7 dias)
+- [x] Proteção de rotas com Guards
+
+### Documentos
+- [x] Upload de imagens (JPG, PNG) e PDFs
+- [x] Validação de tipo e tamanho (max 10MB)
+- [x] Storage configurável (local ou Oracle Cloud)
+- [x] Listagem de documentos por usuário
+- [x] Visualização de documento individual
+- [x] Exclusão com cleanup de arquivos
+
+### OCR (Reconhecimento de Texto)
+- [x] Processamento assíncrono com Tesseract
+- [x] Suporte a português e inglês
+- [x] Status de processamento (PROCESSING, COMPLETED, FAILED)
+- [x] Extração de texto de notas fiscais
+
+### IA (Large Language Model)
+- [x] Perguntas sobre documentos processados
+- [x] Histórico de conversas persistido
+- [x] Resumo automático de documentos
+- [x] Contexto mantido entre perguntas
+
+### Download
+- [x] Exportação em PDF (documento + texto + conversas)
+- [x] Exportação em JSON estruturado
+- [x] Formatação profissional
+
+---
+
+## 📦 Pré-requisitos
+
+- **Node.js** >= 18.x
+- **npm** >= 9.x
+- **PostgreSQL** >= 14.x (ou Docker)
+- **Conta Oracle Cloud** (para storage em produção)
+- **Chave API OpenAI** (para funcionalidades de IA)
+
+---
+
+## 🔧 Instalação
+
+### 1. Clone o repositório
 
 ```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+git clone https://github.com/seu-usuario/-ocr-api.git
+cd -ocr-api
 ```
 
-## Run tests
+### 2. Instale as dependências
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+npm install
 ```
 
-## Deployment
+### 3. Configure o PostgreSQL
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+**Opção A: Docker (Recomendado)**
 
 ```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
+docker run --name -postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=_ocr \
+  -p 5432:5432 \
+  -d postgres:15
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+**Opção B: PostgreSQL Local**
 
-## Resources
+Crie um banco de dados chamado `_ocr` no seu PostgreSQL local.
 
-Check out a few resources that may come in handy when working with NestJS:
+### 4. Configure variáveis de ambiente
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Copie o arquivo de exemplo e edite com suas credenciais:
 
-## Support
+```bash
+cp .env.example .env
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### 5. Execute as migrações do Prisma
 
-## Stay in touch
+```bash
+npx prisma migrate dev --name init
+npx prisma generate
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+---
 
-## License
+## ⚙️ Configuração
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### Arquivo `.env`
 
+```env
+# Database
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ocr?schema=public"
+
+# JWT
+JWT_SECRET="sua-chave-secreta-super-segura-aqui"
+JWT_EXPIRES_IN="7d"
+
+# Storage (escolha: "local" ou "oracle")
+STORAGE_TYPE="local"
+UPLOAD_PATH="./uploads"
+
+# Oracle Cloud (apenas se STORAGE_TYPE=oracle)
+ORACLE_REGION="sa-saopaulo-1"
+ORACLE_NAMESPACE="seu-namespace"
+ORACLE_BUCKET_NAME="ocr-uploads"
+ORACLE_ACCESS_KEY="sua-access-key"
+ORACLE_SECRET_KEY="sua-secret-key"
+
+# OpenAI
+GEMINI_API_KEY="sk-proj-sua-chave-aqui"
+GEMINI_MODEL="gpt-4o-mini"
+
+# App
+PORT=3001
+NODE_ENV="development"
+FRONTEND_URL="http://localhost:3000"
+```
+
+### Gerar JWT Secret Seguro
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+### Obter Credenciais Oracle Cloud
+
+1. Acesse [Oracle Cloud Console](https://cloud.oracle.com)
+2. Vá em **Storage** → **Buckets** → **Create Bucket**
+3. Nome: `ocr-uploads`, Visibility: **Public**
+4. Em **Identity & Security** → **Users** → seu usuário
+5. Crie **Customer Secret Key**
+6. Copie: **Namespace**, **Region**, **Access Key**, **Secret Key**
+
+### Obter Chave Gemini 
+
+1. Acesse a plataforma de API do gemini e siga os passos.
+2. Utilize o modelo gratuito gemini-2.0-flash
+
+---
+
+## 🚀 Executando Localmente
+
+## Inicializar o docker 
+
+docker compose up -d 
+
+### Modo Desenvolvimento (com hot-reload)
+
+```bash
+npm run start:dev
+```
+
+A API estará disponível em: **http://localhost:3001/api**
+
+### Modo Produção
+
+```bash
+npm run build
+npm run start:prod
+```
+
+### Verificar Status
+
+```bash
+curl http://localhost:3001/api/auth/me
+# Deve retornar 401 (não autenticado) - significa que está funcionando
+```
+
+---
+
+## 📡 Endpoints da API
+
+### Autenticação
+
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| POST | `/api/auth/register` | Registrar novo usuário | Não |
+| POST | `/api/auth/login` | Login (retorna JWT) | Não |
+| GET | `/api/auth/me` | Dados do usuário autenticado | Sim |
+
+### Documentos
+
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| POST | `/api/documents/upload` | Upload de documento | Sim |
+| GET | `/api/documents` | Listar documentos do usuário | Sim |
+| GET | `/api/documents/:id` | Ver documento específico | Sim |
+| GET | `/api/documents/:id/status` | Status do processamento OCR | Sim |
+| GET | `/api/documents/:id/download` | Download em PDF/JSON | Sim |
+| DELETE | `/api/documents/:id` | Excluir documento | Sim |
+
+### IA (LLM)
+
+| Método | Endpoint | Descrição | Auth |
+|--------|----------|-----------|------|
+| POST | `/api/llm/ask` | Fazer pergunta sobre documento | Sim |
+| GET | `/api/llm/conversations/:documentId` | Histórico de conversas | Sim |
+| POST | `/api/llm/summarize/:documentId` | Gerar resumo do documento | Sim |
+
+### Exemplos de Uso
+
+**Registrar usuário:**
+```bash
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "usuario@email.com",
+    "password": "senha123",
+    "name": "Nome do Usuário"
+  }'
+```
+
+**Login:**
+```bash
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "usuario@email.com",
+    "password": "senha123"
+  }'
+```
+
+**Upload de documento:**
+```bash
+curl -X POST http://localhost:3001/api/documents/upload \
+  -H "Authorization: Bearer SEU_TOKEN_JWT" \
+  -F "file=@/caminho/para/nota_fiscal.jpg"
+```
+
+**Fazer pergunta:**
+```bash
+curl -X POST http://localhost:3001/api/llm/ask \
+  -H "Authorization: Bearer SEU_TOKEN_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "documentId": "uuid-do-documento",
+    "question": "Qual o valor total desta nota fiscal?"
+  }'
+```
+
+---
+
+## 📁 Estrutura do Projeto
+
+```
+src/
+├── main.ts                  # Entry point
+├── app.module.ts            # Módulo raiz
+│
+├── auth/                    # Autenticação
+│   ├── auth.module.ts
+│   ├── auth.controller.ts
+│   ├── auth.service.ts
+│   ├── strategies/
+│   │   └── jwt.strategy.ts
+│   ├── guards/
+│   │   └── jwt-auth.guard.ts
+│   ├── decorators/
+│   │   └── current-user.decorator.ts
+│   └── dto/
+│       ├── register.dto.ts
+│       └── login.dto.ts
+│
+├── users/                   # Gerenciamento de usuários
+│   ├── users.module.ts
+│   └── users.service.ts
+│
+├── documents/               # Documentos
+│   ├── documents.module.ts
+│   ├── documents.controller.ts
+│   ├── documents.service.ts
+│   ├── download.service.ts
+│   └── dto/
+│       └── upload-document.dto.ts
+│
+├── ocr/                     # OCR (Tesseract)
+│   ├── ocr.module.ts
+│   └── ocr.service.ts
+│
+├── llm/                     # IA (OpenAI)
+│   ├── llm.module.ts
+│   ├── llm.controller.ts
+│   ├── llm.service.ts
+│   └── dto/
+│       └── ask-question.dto.ts
+│
+├── storage/                 # Armazenamento
+│   ├── storage.module.ts
+│   └── storage.service.ts
+│
+└── prisma/                  # Database
+    ├── prisma.module.ts
+    ├── prisma.service.ts
+    └── schema.prisma
+```
+
+---
+
+## 🔍 Prisma Schema
+
+```prisma
+model User {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  name      String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  documents Document[]
+}
+
+model Document {
+  id              String         @id @default(uuid())
+  userId          String
+  originalName    String
+  storageUrl      String
+  mimeType        String
+  fileSize        Int
+  status          DocumentStatus @default(PROCESSING)
+  extractedText   String?        @db.Text
+  processingError String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+}
+
+enum DocumentStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Conversation {
+  id         String   @id @default(uuid())
+  documentId String
+  messages   Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+}
+```
+
+
+---
+
+## 🐛 Troubleshooting
+
+### Erro: "Can't reach database server"
+
+```bash
+# Verificar se PostgreSQL está rodando
+docker ps
+
+# Reiniciar container
+docker restart -postgres
+
+# Verificar logs
+docker logs -postgres
+```
+
+### Erro: "Tesseract worker not initialized"
+
+```bash
+# Limpar cache e reinstalar
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Erro: "OCR muito lento"
+
+- Use imagens menores (max 2MB recomendado)
+- Considere Google Cloud Vision API para OCR mais rápido
+- Em produção, use filas (Bull/BullMQ) para processar em background
+
+### Erro: "OpenAI rate limit"
+
+- Verifique se tem créditos na conta
+- Adicione retry logic com backoff exponencial
+- Use cache para respostas repetidas
+
+---
+
+## 📄 Licença
+
+MIT
+
+---
+
+
+---
+
+## 🔗 Links Úteis
+
+- [Documentação NestJS](https://docs.nestjs.com)
+- [Documentação Prisma](https://www.prisma.io/docs)
+- [OpenAI API Reference](https://platform.openai.com/docs)
+- [Tesseract.js](https://github.com/naptha/tesseract.js)
+- [Oracle Cloud Storage](https://docs.oracle.com/en-us/iaas/Content/Object/home.html)
 
 ENV 
 # Storage - LOCAL 
@@ -113,15 +512,11 @@ ORACLE_BUCKET_NAME="bucketname"
 ORACLE_ACCESS_KEY="access-key"      
 ORACLE_SECRET_KEY="secret-key"       
 
-## Storage: Oracle Cloud Object Storage
 
-O sistema foi configurado para usar **Oracle Cloud Object Storage** em produção, aproveitando o **Always Free Tier** (20GB).
 
-### Benefícios da escolha:
-- ✅ Persistência garantida (arquivos não se perdem em redeploys)
-- ✅ URLs públicas para fácil acesso
-- ✅ Always Free (vs 12 meses AWS)
-- ✅ API S3-compatible (portabilidade)
+-------------------------
+
+### Deprecated README Below 
 
 docker exec -it postgres psql -U postgres -d bd
 
@@ -148,14 +543,11 @@ REDIS_PASSWORD=""  # vazio se não tiver senha
 STORAGE_TYPE=oracle
 ORACLE_REGION=sa-saopaulo-1
 ORACLE_NAMESPACE=...
-ORACLE_BUCKET_NAME=paggo-ocr-uploads
-
+ORACLE_BUCKET_NAME=-ocr-uploads
 
 ```
 
-Isso demonstra conhecimento de cloud storage e boas práticas de arquitetura.
-
 # install Redis Local 
 
-docker run --name paggo-redis -p 6379:6379 -d redis:7-alpine
+docker run --name -redis -p 6379:6379 -d redis:7-alpine
 

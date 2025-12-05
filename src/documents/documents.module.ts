@@ -8,7 +8,7 @@ import { DownloadService } from 'src/documents/download.service';
 @Module({
   imports: [
     StorageModule,
-    OcrModule, // 👈 Já exporta BullModule.registerQueue
+    OcrModule,
   ],
   controllers: [DocumentsController],
   providers: [DocumentsService, DownloadService],

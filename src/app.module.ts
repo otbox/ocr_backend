@@ -19,7 +19,6 @@ import { NotificationsModule } from './notifications/notifications.module';
       isGlobal: true,
     }),
     EventEmitterModule.forRoot(),
-    // Configurar Bull globalmente
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

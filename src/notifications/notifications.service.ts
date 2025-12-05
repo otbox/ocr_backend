@@ -13,23 +13,17 @@ export class NotificationsService {
   handleOcrCompleted(event: OcrCompletedEvent) {
     this.logger.log(`📧 Processando evento OCR concluído: ${event.documentId}`);
 
-    // Verificar se usuário está online
     const isOnline = this.notificationsGateway.isUserOnline(event.userId);
     this.logger.log(`User ${event.userId} online: ${isOnline}`);
 
-    // Enviar via WebSocket se estiver online
     if (isOnline) {
       this.notificationsGateway.notifyOcrCompleted(event.userId, {
         documentId: event.documentId,
-        extractedText: event.extractedText.substring(0, 200) + '...', // Preview
+        extractedText: event.extractedText.substring(0, 200) + '...', 
         confidence: event.confidence,
       });
     }
 
-    // Aqui você poderia também:
-    // - Enviar email se offline
-    // - Salvar notificação no banco
-    // - Enviar push notification
   }
 
   @OnEvent('ocr.failed')

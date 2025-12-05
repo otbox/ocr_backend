@@ -34,9 +34,7 @@ export class NotificationsGateway implements OnGatewayInit, OnGatewayConnection,
     server: Server;
 
     private readonly logger = new Logger(NotificationsGateway.name);
-    private readonly userSockets = new Map<string, Set<string>>(); // userId -> Set<socketId>
-    // prisma: any;
-    // llmService: any;
+    private readonly userSockets = new Map<string, Set<string>>();
 
     constructor(private jwtService: JwtService,
             private llmService: LlmService,
@@ -119,7 +117,6 @@ export class NotificationsGateway implements OnGatewayInit, OnGatewayConnection,
         return { event: 'joined', room: data.room };
     }
 
-    // Cliente sai de uma sala
     @SubscribeMessage(SocketEvent.LEAVE_ROOM)
     handleLeaveRoom(
         @MessageBody() data: { room: string },
@@ -137,13 +134,12 @@ export class NotificationsGateway implements OnGatewayInit, OnGatewayConnection,
         @MessageBody() data: { documentId: string; question: string },
         @ConnectedSocket() client: Socket,
     ) {
-        const userId = client.data.userId; // usuário já autenticado no handleConnection
+        const userId = client.data.userId; 
         
         this.logger.log("aqui:",data.documentId, data.question)
         try {
             this.logger.log(`💬 Pergunta recebida de user:${userId} para doc:${data.documentId}`);
 
-            // 1) Buscar documento com conversas
             const document = await this.prisma.document.findUnique({
                 where: { id: data.documentId },
                 include: {
@@ -154,8 +150,6 @@ export class NotificationsGateway implements OnGatewayInit, OnGatewayConnection,
                 },
             });
 
-
-            // Validações (mesma lógica do controller)
             if (!document) {
                 throw new Error('Documento não encontrado');
             }
@@ -172,20 +166,17 @@ export class NotificationsGateway implements OnGatewayInit, OnGatewayConnection,
                 throw new Error('Nenhum texto extraído do documento');
             }
 
-            // 2) Pegar histórico de conversa
             const existingConversation = document.conversations[0];
             const conversationHistory = existingConversation
                 ? (existingConversation.messages as any[])
                 : [];
 
-            // 3) Gerar resposta com a LLM
             const answer = await this.llmService.generateResponse(
                 document.extractedText,
                 conversationHistory,
                 data.question,
             );
 
-            // 4) Salvar no banco
             const newMessages = [
                 ...conversationHistory,
                 { role: 'user', content: data.question },
@@ -206,7 +197,6 @@ export class NotificationsGateway implements OnGatewayInit, OnGatewayConnection,
                 });
             }
 
-            // 5) Emitir resposta de volta para o cliente
             client.emit('llm:answer', {
                 documentId: data.documentId,
                 question: data.question,
@@ -222,7 +212,6 @@ export class NotificationsGateway implements OnGatewayInit, OnGatewayConnection,
                 error.message,
             );
 
-            // Emitir erro de volta
             client.emit('llm:error', {
                 documentId: data.documentId,
                 question: data.question,
