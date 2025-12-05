@@ -87,6 +87,19 @@ export class OcrProcessor {
   @OnQueueActive()
   onActive(job: Job<OcrJobData>) {
     this.logger.log(`🚀 Job ${job.id} iniciado - Document ${job.data.documentId}`);
+    this.prisma.document
+      .findUnique({
+        where: { id: job.data.documentId },
+        select: { userId: true },
+      })
+      .then((doc) => {
+        if (doc) {
+          this.eventEmitter.emit('ocr.started', {
+            documentId: job.data.documentId,
+            userId: doc.userId,
+          });
+        }
+      });
   }
 
   @OnQueueCompleted()

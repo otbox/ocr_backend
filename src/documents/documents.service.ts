@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { OCR_QUEUE, OcrJobData } from '../ocr/ocr.queue';
 import { DocumentStatus } from '@prisma/client';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class DocumentsService {
@@ -13,14 +14,13 @@ export class DocumentsService {
   constructor(
     private prisma: PrismaService,
     private storageService: StorageService,
-    @InjectQueue(OCR_QUEUE) private ocrQueue: Queue<OcrJobData>, // 👈 Injeta a fila
+    @InjectQueue(OCR_QUEUE) private ocrQueue: Queue<OcrJobData>, 
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async uploadDocument(userId: string, file: Express.Multer.File) {
-    // 1. Salvar arquivo no storage
     const { fileName, url } = await this.storageService.saveFile(file);
 
-    // 2. Criar registro no banco
     const document = await this.prisma.document.create({
       data: {
         userId,
@@ -32,7 +32,6 @@ export class DocumentsService {
       },
     });
 
-    // 3. Adicionar à fila (não espera processar)
     const filePath = await this.storageService.getFilePath(fileName);
     
     await this.ocrQueue.add({
@@ -48,11 +47,9 @@ export class DocumentsService {
     return document;
   }
 
-  // Método para verificar status do job
   async getJobStatus(documentId: string, userId: string) {
     const document = await this.findOne(documentId, userId);
 
-    // Buscar job na fila
     const jobs = await this.ocrQueue.getJobs(['active', 'waiting', 'delayed']);
     const job = jobs.find(j => j.data.documentId === documentId);
 
@@ -72,8 +69,6 @@ export class DocumentsService {
       state: await job.getState(),
     };
   }
-
-  // ... resto do código permanece igual ...
 
   async findAll(userId: string) {
     return this.prisma.document.findMany({
@@ -120,6 +115,11 @@ export class DocumentsService {
     // Deletar do banco
     await this.prisma.document.delete({
       where: { id },
+    });
+
+        this.eventEmitter.emit('document.deleted', {
+      documentId: id,
+      userId,
     });
 
     return { message: 'Documento deletado com sucesso' };

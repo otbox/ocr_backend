@@ -11,6 +11,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { LlmModule } from './llm/llm.module';
 import { DownloadService } from './documents/download.service';
 import { NotificationsService } from './notifications/notifications.service';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { NotificationsService } from './notifications/notifications.service';
     OcrModule,
     DocumentsModule,
     LlmModule,
+    NotificationsModule,
   ],
   providers: [DownloadService, NotificationsService],
 })
