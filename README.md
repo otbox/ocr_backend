@@ -96,3 +96,66 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+
+ENV 
+# Storage - LOCAL 
+STORAGE_TYPE="local"
+UPLOAD_PATH="./uploads"
+
+# Storage - WEB
+STORAGE_TYPE="oracle"
+
+# Oracle Cloud Object Storage
+ORACLE_REGION="region"           
+ORACLE_NAMESPACE="namespace"    
+ORACLE_BUCKET_NAME="bucketname"   
+ORACLE_ACCESS_KEY="access-key"      
+ORACLE_SECRET_KEY="secret-key"       
+
+## Storage: Oracle Cloud Object Storage
+
+O sistema foi configurado para usar **Oracle Cloud Object Storage** em produção, aproveitando o **Always Free Tier** (20GB).
+
+### Benefícios da escolha:
+- ✅ Persistência garantida (arquivos não se perdem em redeploys)
+- ✅ URLs públicas para fácil acesso
+- ✅ Always Free (vs 12 meses AWS)
+- ✅ API S3-compatible (portabilidade)
+
+docker exec -it postgres psql -U postgres -d bd
+
+
+### Configuração
+
+**Local (desenvolvimento):**
+
+docker env
+
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/bd"
+
+```env
+STORAGE_TYPE=local
+
+# Redis
+REDIS_HOST="localhost"
+REDIS_PORT=6379
+REDIS_PASSWORD=""  # vazio se não tiver senha
+```
+
+**Produção:**
+```env
+STORAGE_TYPE=oracle
+ORACLE_REGION=sa-saopaulo-1
+ORACLE_NAMESPACE=...
+ORACLE_BUCKET_NAME=paggo-ocr-uploads
+
+
+```
+
+Isso demonstra conhecimento de cloud storage e boas práticas de arquitetura.
+
+# install Redis Local 
+
+docker run --name paggo-redis -p 6379:6379 -d redis:7-alpine
+
